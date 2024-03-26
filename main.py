@@ -130,5 +130,4 @@ async def on_presence_update(before_m, after_m):
                         pass
             return
 
-discord.Color.gold()
 bot.run(TOKEN)
