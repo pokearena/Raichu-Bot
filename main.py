@@ -6,7 +6,7 @@ import time
 import discord
 from discord.ext import commands
 
-from dotenv import TOKEN
+from dotenv import GUILD_ID, ALLY_role, TOKEN
 
 
 intents = discord.Intents.default()
@@ -18,12 +18,10 @@ bot = commands.Bot(command_prefix=commands.when_mentioned_or("%"), strip_after_p
                    intents=intents)
 bot.activity = discord.Activity(type=discord.ActivityType.playing, name="🌊Sugar Surf!🌸")
 
-GUILD_ID = 1006542206569558116
 INFINITY_role = 1102473662352863242
 IMMORTAL_role = 1102473551195410502
 VOID_role = 1102473472438972448
 
-ALLY_role = 1217377533155344435
 
 clan_role_set = {INFINITY_role, IMMORTAL_role, VOID_role}
 clan_channels = {INFINITY_role: 1123818520002711622, IMMORTAL_role: 1123815087350763520, VOID_role: 1123814492309041253}
@@ -91,7 +89,7 @@ async def fix_vanity(ctx):
 @bot.event
 async def on_member_join(member):
     """remove role from rejoiners that get it added back via carl sticky role"""
-    if member.bot or member.guild.id != 1006542206569558116:
+    if member.bot or member.guild.id != GUILD_ID:
         return
 
     await asyncio.sleep(2)
@@ -101,7 +99,7 @@ async def on_member_join(member):
 @bot.event
 async def on_presence_update(before_m, after_m):
     """vanity role"""
-    if after_m.bot or after_m.guild.id != 1006542206569558116:
+    if after_m.bot or after_m.guild.id != GUILD_ID:
         return
 
     # clear vanity in-case conditions are met
