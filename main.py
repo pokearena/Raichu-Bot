@@ -2,6 +2,7 @@ import asyncio
 import random
 import re
 import time
+from datetime import datetime
 
 import discord
 from discord.ext import commands
@@ -67,11 +68,71 @@ small_timeout_map = dict()
 vanity_regex = re.compile(r'((?:\.gg|discord\.gg)/pokearena(?: |$))')
 
 
+async def greenlist_vanity_emb(member: discord.Member):
+    """
+    Called when a member is provided vanity role
+    To send a dm/modify sent dm
+    """
+    channel = member.dm_channel
+    if channel is None:
+        try:
+            channel = await member.create_dm()
+        except:
+            return  # not possible
+    # Check channel history upto 20 msges
+    async for message in channel.history(limit=20):
+        if message.author != member and message.embeds and message.embeds[0].title == "⭐ New Ally":
+            emb = message.embeds[0]
+            # For old dms, where no field was sent
+            if not emb.fields:
+                emb.add_field(name="Last Updated:", value=discord.utils.format_dt(datetime.now(), "R"))
+                emb.add_field(name="Action Done:", value="✅ Added **Ally** role to you")
+            else:
+                emb.set_field_at(0, name=emb.fields[0].name, value=discord.utils.format_dt(datetime.now(), "R"))
+                emb.set_field_at(1, name=emb.fields[1].name, value="✅ Added **Ally** role to you")
+            await message.edit(embed=emb)
+            break
+    else:
+        emb = discord.Embed(color=discord.Color.gold(), title='⭐ New Ally')
+        emb.description = f"<:like:1118127706928857149> Hey **{member.name.title()}**, it is commendable that you have" \
+                          " supported Pokearena Official! You are now an **Ally** of arena as our token of gratitude! 🌠"
+        emb.set_thumbnail(
+            url="https://cdn.discordapp.com/icons/1006542206569558116/583fa7c3571c84397ce5c4577cb6df63.png?size=1024")
+        emb.add_field(name="Last Updated:", value=discord.utils.format_dt(datetime.now(), "R"))
+        emb.add_field(name="Action Done:", value="✅ Added **Ally** role to you")
+        await channel.send(embed=emb)
+
+
+async def redlist_vanity_emb(member: discord.Member):
+    """
+    Called when a member is removed from vanity role
+    To modify sent dm if applicable
+    """
+    channel = member.dm_channel
+    if channel is None:
+        try:
+            channel = await member.create_dm()
+        except:
+            return  # not possible
+    # Check channel history upto 20 msges
+    async for message in channel.history(limit=20):
+        if message.author != member and message.embeds and message.embeds[0].title == "⭐ New Ally":
+            emb = message.embeds[0]
+            if not emb.fields:
+                emb.add_field(name="Last Updated:", value=discord.utils.format_dt(datetime.now(), "R"))
+                emb.add_field(name="Action Done:", value="❌ Removed **Ally** role from you")
+            else:
+                emb.set_field_at(0, name=emb.fields[0].name, value=discord.utils.format_dt(datetime.now(), "R"))
+                emb.set_field_at(1, name=emb.fields[1].name, value="❌ Removed **Ally** role from you")
+            return await message.edit(embed=emb)
+
+
 async def clear_vanity_oncheck(member):
     if member.get_role(ALLY_role) is not None:
         if member.raw_status == "offline" or not vanity_regex.findall([a for a in member.activities if isinstance(a, discord.CustomActivity)][0].name):
             await member.remove_roles(member.guild.get_role(ALLY_role))
             small_timeout_map[member.id] = int(time.time()) + 30  # 30 seconds cooldown
+            await redlist_vanity_emb(member)
             return True
 
 
@@ -117,15 +178,7 @@ async def on_presence_update(before_m, after_m):
                     role = after_m.guild.get_role(ALLY_role)
                     await after_m.add_roles(role)
                     small_timeout_map.pop(after_m.id, None)  # ignore errors
-                    emb = discord.Embed(color=discord.Color.gold(), title='⭐ New Ally')
-                    emb.description = f"<:like:1118127706928857149> Hey **{after_m.name.title()}**, it is commendable that you have" \
-                                      " supported Pokearena Official! You are now an **Ally** of arena as our token of gratitude! 🌠"
-                    emb.set_thumbnail(
-                        url="https://cdn.discordapp.com/icons/1006542206569558116/583fa7c3571c84397ce5c4577cb6df63.png?size=1024")
-                    try:
-                        await after_m.send(embed=emb)
-                    except:
-                        pass
+                    await greenlist_vanity_emb(after_m)
             return
 
 bot.run(TOKEN)
