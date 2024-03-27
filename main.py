@@ -129,7 +129,15 @@ async def redlist_vanity_emb(member: discord.Member):
 
 async def clear_vanity_oncheck(member):
     if member.get_role(ALLY_role) is not None:
-        if member.raw_status == "offline" or not vanity_regex.findall([a for a in member.activities if isinstance(a, discord.CustomActivity)][0].name):
+        if member.raw_status == "offline":
+            await member.remove_roles(member.guild.get_role(ALLY_role))
+            small_timeout_map[member.id] = int(time.time()) + 30  # 30 seconds cooldown
+            await redlist_vanity_emb(member)
+            return True
+        for activity in member.activities:
+            if isinstance(activity, discord.CustomActivity) and vanity_regex.findall(activity.name):
+                break
+        else:
             await member.remove_roles(member.guild.get_role(ALLY_role))
             small_timeout_map[member.id] = int(time.time()) + 30  # 30 seconds cooldown
             await redlist_vanity_emb(member)
