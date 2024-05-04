@@ -211,8 +211,8 @@ async def boosters(ctx):
     emb = discord.Embed(color=discord.Color.pink())
     if ctx.guild.premium_subscription_count:
         prem = ctx.guild.premium_subscribers
-        emb.title = f"❤️‍🔥 {len(prem)} Arena Boosters ({ctx.guild.premium_subscription_count} boosts) | Level {ctx.guild.premium_tier}"
-        emb.description = f"<:like:1118127706928857149> Thankful to all {ctx.guild.premium_subscriber_role.mention} of arena!"
+        emb.title = f"❤️‍🔥 {len(prem)} Arena Boosters | Level {ctx.guild.premium_tier} ({ctx.guild.premium_subscription_count} boosts) "
+        emb.description = f"<:like:1118127706928857149> Thankful to all {ctx.guild.premium_subscriber_role.mention} of arena!\n- "
         emb.description += "\n- ".join([f"**{p}** ({p.mention})" for p in prem])
     else:
         emb.title = f"❤️‍🔥 Arena Boosters"
