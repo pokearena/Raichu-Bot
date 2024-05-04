@@ -65,7 +65,15 @@ async def on_member_update(before_m, after_m):
 
 
 small_timeout_map = dict()
-vanity_regex = re.compile(r'((?:\.gg|discord\.gg)/pokearena(?: |$))')
+site_regex = re.compile(r'((?:^| )(?:http://|https://|)(?:www\.|)pokearena.xyz(?: |$))')
+vanity_regex = re.compile(r'((?:^| )(?:\.gg|discord\.gg)/pokearena(?: |$))')
+
+
+def contains_vanity(status_content: str):
+    guild = bot.get_guild(GUILD_ID)
+    if guild.premium_tier == 3:
+        return vanity_regex.findall(status_content) or site_regex.findall(status_content)
+    return site_regex.findall(status_content)
 
 
 async def greenlist_vanity_emb(member: discord.Member):
@@ -135,7 +143,7 @@ async def clear_vanity_oncheck(member):
             await redlist_vanity_emb(member)
             return True
         for activity in member.activities:
-            if isinstance(activity, discord.CustomActivity) and vanity_regex.findall(activity.name):
+            if isinstance(activity, discord.CustomActivity) and contains_vanity(activity.name):
                 break
         else:
             await member.remove_roles(member.guild.get_role(ALLY_role))
@@ -178,8 +186,7 @@ async def on_presence_update(before_m, after_m):
     # add vanity in-case conditions are met
     for activity in after_m.activities:
         if isinstance(activity, discord.CustomActivity):
-            match = vanity_regex.findall(str(activity.name))
-            if match:
+            if contains_vanity(activity.name):
                 if small_timeout_map.get(after_m.id, 0) > time.time():
                     return
                 elif after_m.get_role(ALLY_role) is None:  # member does not have the ally role
