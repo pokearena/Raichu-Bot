@@ -14,6 +14,7 @@ intents = discord.Intents.default()
 intents.typing = False
 intents.presences = True
 intents.members = True
+intents.message_content = True
 
 bot = commands.Bot(command_prefix=commands.when_mentioned_or("%"), strip_after_prefix=True, case_insensitive=True,
                    intents=intents)
@@ -161,6 +162,62 @@ async def fix_vanity(ctx):
         if await clear_vanity_oncheck(member):
             count += 1
     await ctx.send(f'Fixed from {count} members.')
+
+
+@bot.command()
+@commands.is_owner()
+async def sync(ctx):
+    await bot.tree.sync()
+    await ctx.send('Successfully synced!')
+
+
+@bot.hybrid_command(aliases=('flip', ))
+@commands.cooldown(1, 2.0, commands.BucketType.user)
+async def coinflip(ctx):
+    """%flip, a simple coin flip"""
+    await ctx.send(f"{ctx.author.mention} {random.choice(['heads', 'tails', 'heads', 'tails'])}", allowed_mentions=discord.AllowedMentions(users=False))  # for no particular reason
+
+
+@bot.hybrid_command(aliases=('vanity', ))
+@commands.cooldown(1, 2.0, commands.BucketType.channel)
+async def ally(ctx):
+    """%ally, info on obtaining vanity role"""
+    emb = discord.Embed(color=discord.Color.blurple())
+    emb.title = "🔥 Arena Rewards!"
+    availability = "" if ctx.guild.premium_tier == 3 else "❌ discord.gg/pokearena is unavailable until Server reaches level 3 -> see %boost"
+    emb.description = f"""
+╔⏤‧˚❀༉.⏤╝❀╚⏤⏤⏤⏤╗
+Time limited <@&{ALLY_role}> role
+╚⏤⏤⏤⏤╗❀╔⏤‧˚❀༉.⏤╝
+
+💭 How to obtain?
+`Ans:` **Add discord.gg/pokearena or pokearena.xyz into your 📝custom status** and our Helper {ctx.bot.user.mention} will give you the role, along with a thankyou note <:like:1118127706928857149> 
+
+💖 The ally role is hoisted and will show off higher than level roles ✨ 
+⚠️ It goes away if you take away the status/go offline
+"""
+    if availability:
+        emb.set_footer(text=availability)
+    await ctx.send(embed=emb)
+
+
+@bot.hybrid_command(aliases=('boost', ))
+@commands.guild_only()
+@commands.cooldown(1, 3.0, commands.BucketType.channel)
+async def boosters(ctx):
+    """
+    %boost, info of boosters
+    """
+    emb = discord.Embed(color=discord.Color.pink())
+    if ctx.guild.premium_subscription_count:
+        prem = ctx.guild.premium_subscribers
+        emb.title = f"❤️‍🔥 {len(prem)} Arena Boosters ({ctx.guild.premium_subscription_count} boosts) | Level {ctx.guild.premium_tier}"
+        emb.description = f"<:like:1118127706928857149> Thankful to all {ctx.guild.premium_subscriber_role.mention} of arena!"
+        emb.description += "\n- ".join([f"**{p}** ({p.mention})" for p in prem])
+    else:
+        emb.title = f"❤️‍🔥 Arena Boosters"
+        emb.description = f"Boost now to support Pokearena Official and gain {ctx.guild.premium_subscriber_role.mention} role!"
+    await ctx.send(embed=emb)
 
 
 @bot.event
