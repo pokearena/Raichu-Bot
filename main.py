@@ -144,7 +144,7 @@ async def clear_vanity_oncheck(member):
             await redlist_vanity_emb(member)
             return True
         for activity in member.activities:
-            if isinstance(activity, discord.CustomActivity) and contains_vanity(activity.name):
+            if isinstance(activity, discord.CustomActivity) and contains_vanity(str(activity.name)):
                 break
         else:
             await member.remove_roles(member.guild.get_role(ALLY_role))
@@ -243,7 +243,7 @@ async def on_presence_update(before_m, after_m):
     # add vanity in-case conditions are met
     for activity in after_m.activities:
         if isinstance(activity, discord.CustomActivity):
-            if contains_vanity(activity.name):
+            if contains_vanity(str(activity.name)):
                 if small_timeout_map.get(after_m.id, 0) > time.time():
                     return
                 elif after_m.get_role(ALLY_role) is None:  # member does not have the ally role
