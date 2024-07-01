@@ -1,6 +1,9 @@
 # ignore the following
 dotenv.py
 
+# db
+database.json
+
 # Python
 # Byte-compiled / optimized / DLL files
 __pycache__/
