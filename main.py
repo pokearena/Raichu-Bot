@@ -398,7 +398,7 @@ class TimezoneToggle(View):
     @discord.ui.button(label="Turn On", style=discord.ButtonStyle.green)
     async def callback(self, interaction, btn):
         if not data.get(str(interaction.user.id), {}).get('timezone'):
-            return await interaction.response.send_message("You have not yet set a timezone, use %tz newtimezone or /timezone set", ephemeral=True)
+            return await interaction.response.send_message("You have not yet set a timezone, use %tz newtimezone or </timezone set:1257289655242719392>", ephemeral=True)
         await interaction.response.send_message('Turned ON live universal time response! Test it out by entering `11am` into the chat!', ephemeral=True)
         data[str(interaction.user.id)]['enabled'] = True
         update_db()
@@ -414,14 +414,14 @@ async def timezone(ctx, new_timezone=None):
             embs = generate_all_tz_embeds()
             return await ctx.send('Unable to find mentioned timezone, please check in the following list to find your timezone:-\n**All shown timezones are sorted in ascending order for ease of finding your timezone!**', embed=embs[0], view=AllTimezonePaginator(embs), ephemeral=True)
 
-        await ctx.send(f'Your timezone has now been set to `{new_timezone}`. Click below to get started! Use `%tz help` or /timezone help to know more!!', view=TimezoneToggle())
+        await ctx.send(f'Your timezone has now been set to `{new_timezone}`. Click below to get started! Use `%tz help` or </timezone help:1257289655242719392> to know more!!', view=TimezoneToggle())
         data[str(ctx.author.id)] = {'timezone': new_timezone, 'enabled': data.get(str(ctx.author.id), {}).get('enabled') or False}
         update_db()
     else:
         if str(ctx.author.id) not in data:
-            return await ctx.send('You have not set any timezone yet for it to be reset. Use `%tz help` or /timezone help to know more!!', ephemeral=True)
+            return await ctx.send('You have not set any timezone yet for it to be reset. Use `%tz help` or </timezone help:1257289655242719392> to know more!!', ephemeral=True)
 
-        await ctx.send('Successfully cleared your timezone. Set a new one via `%tz timezone` or /timezone set', ephemeral=True)
+        await ctx.send('Successfully cleared your timezone. Set a new one via `%tz timezone` or </timezone set:1257289655242719392>', ephemeral=True)
         data[str(ctx.author.id)]['timezone'] = None
         update_db()
 
@@ -438,7 +438,7 @@ async def help_(ctx):
     emb = discord.Embed(color=discord.Color.brand_red(), title=f"🌐 Global Timezoner")
     emb.description = """
 Engage in easy time conversations, where each time you mention is viewable by everyone in their own timezone. 
-Simply specify your timezone in /timezone set and enjoy the magic after turning it on via /timezone on!
+Simply specify your timezone in </timezone set:1257289655242719392> and enjoy the magic after turning it on via </timezone on:1257289655242719392>!
 ## Privacy Policy:
 Raichu bot takes your privacy seriously.
 Your timezone is private and no one can view it directly!
@@ -457,11 +457,11 @@ For example:-
 - I want to know what time it is for me when it is 3am for @otherperson
 Simply add `for @user` to any mentioned time, to view your time according to someone else's timezone
 ## Setup:
-/timezone help  -> shows this command
-/timezone info  -> view all available timezones
-/timezone set <new timezone>  -> setup your timezone
-/timezone on   -> turn on global time shower for your time based messages
-/timezone off  -> turn off global time shower for your time based messages
+</timezone help:1257289655242719392>  -> shows this command
+</timezone info:1257289655242719392>  -> view all available timezones
+</timezone set:1257289655242719392> <new timezone>  -> setup your timezone
+</timezone on:1257289655242719392>   -> turn on global time shower for your time based messages
+</timezone off:1257289655242719392>  -> turn off global time shower for your time based messages
 """
     emb.set_footer(text="Built with ❤️ by Intenzi")
     await ctx.send(embed=emb)
@@ -478,7 +478,7 @@ async def information(ctx):
 async def on(ctx):
     """Start showing global time for times mentioned by you"""
     if not data.get(str(ctx.author.id), {}).get('timezone'):
-        return await ctx.send("You have not yet set a timezone, use %tz newtimezone or /timezone set")
+        return await ctx.send("You have not yet set a timezone, use %tz newtimezone or </timezone set:1257289655242719392>")
 
     await ctx.send('Turned ON live universal time response! Test it out by entering `11am` into the chat!', ephemeral=True)
     data[str(ctx.author.id)]['enabled'] = True
@@ -489,7 +489,7 @@ async def on(ctx):
 async def off(ctx):
     """Stop showing global time for times mentioned by you"""
     if not data.get(str(ctx.author.id), {}).get('timezone'):
-        return await ctx.send("You have not yet set a timezone, use %tz newtimezone or /timezone set")
+        return await ctx.send("You have not yet set a timezone, use %tz newtimezone or </timezone set:1257289655242719392>")
 
     await ctx.send('Turned OFF live universal time response!', ephemeral=True)
     data[str(ctx.author.id)]['enabled'] = False
