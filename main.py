@@ -285,27 +285,34 @@ async def boosters(ctx):
 
 # Regex for 12h format time parsing
 time_regex = re.compile(
-    r'(?:^|\s)(1[0-2]|0?[1-9])\s{0,3}(?::\s{0,3}([0-5][0-9]))?\s{0,3}(am|pm)?.?\s{0,2}(yesterday|tomorrow|day\s{0,3}after\s{0,3}tomorrow|day\s{0,3}before\s{0,3}yesterday)?\s{0,3}(?:(?:for)?\s{0,3}(?:<@!?([0-9]+)>))?(?:\s|$)', re.IGNORECASE)
+    r'(?:^|\s)(1[0-2]|0?[1-9])\s{0,3}(?::\s{0,3}([0-5][0-9]))?\s{0,3}(am|pm)?.?\s{0,2}(yesterday|tomorrow|day\s{0,3}after\s{0,3}tomorrow|day\s{0,3}before\s{0,3}yesterday)?\s{0,3}(?:for\s{0,3}(<@!?[0-9]+>|[0-9]+|[a-z._]+))?(?:\s|$)', re.IGNORECASE)
 
 
-def parse_matchgroup_to_tz(message, match_group, embed):
+async def parse_matchgroup_to_tz(context, message, match_group, embeds, embed_order):
     # Extract components
-    hour, minute, am_pm, day_ref, user_id = match_group
+    hour, minute, am_pm, day_ref, user_mentioned = match_group
 
     tz = None
-    if user_id and message.mentions:  # for user
-        if any(str(m.id) == user_id for m in message.mentions):
-            if user_id in data and data[user_id]['enabled'] and data[user_id]['timezone'] and message.guild.get_member(int(user_id)):  # they need have a timezone
-                tz = data[user_id]['timezone']
-                member = message.guild.get_member(int(user_id))
-                embed.set_author(name=f"{member.name}'s time", icon_url=member.display_avatar)
+    if user_mentioned:  # for user
+        try:
+            member = await commands.MemberConverter().convert(context, user_mentioned)
+        except commands.MemberNotFound:
+            return
+        else:
+            if str(member.id) in data and data[str(member.id)]['enabled'] and data[str(member.id)]['timezone'] and message.guild.get_member(member.id):  # they need have a timezone
+                tz = data[str(member.id)]['timezone']
+                if member.id not in embed_order:
+                    embeds[len(embed_order)].set_author(name=f"{member.name}'s time", icon_url=member.display_avatar)
+                    embed_order.append(member.id)
             else:
                 return
-
     if not tz:
-        tz = data.get(str(message.author.id), {}).get('timezone')
-        embed.set_author(name=message.author.name, icon_url=message.author.display_avatar)
-        if not tz or not data[str(message.author.id)]['enabled']:
+        member = message.author
+        tz = data.get(str(member.id), {}).get('timezone')
+        if member.id not in embed_order:
+            embeds[len(embed_order)].set_author(name=member.name, icon_url=member.display_avatar)
+            embed_order.append(member.id)
+        if not tz or not data[str(member.id)]['enabled']:
             return
 
     # Convert to 24-hour format
@@ -340,25 +347,15 @@ def parse_matchgroup_to_tz(message, match_group, embed):
     if not am_pm:
         result1 = now.replace(hour=hour + 12 if hour != 12 else 12, minute=minute)
         result2 = now.replace(hour=0 if hour == 12 else hour, minute=minute)
-        return [result1, result2]
+        return add_time_to_embed([result1, result2], embeds, embed_order, member)
 
     result = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
-    return result
+    return add_time_to_embed([result], embeds, embed_order, member)
 
 
-def parse_matchgroup_to_time(matchgroup, is_am_pm=None):
-    hour, minute, am_pm, day_ref, _ = matchgroup
-    t_str = hour
-    if minute:
-        t_str += f":{minute}"
-    if am_pm:
-        t_str += " " + am_pm.lower()
-    elif is_am_pm:
-        t_str += " " + is_am_pm
-    if day_ref:
-        t_str += " " + day_ref.lower()
-
-    return t_str
+def add_time_to_embed(times, embeds, embed_order, member):
+    for t in times:
+        embeds[embed_order.index(member.id)].description += f'- {t.strftime("%I:%M %p") if t.minute else t.strftime("%I %p")} -> {discord.utils.format_dt(t, "F")} ({discord.utils.format_dt(t, "R")}) your time\n'
 
 
 @bot.event
@@ -369,24 +366,16 @@ async def on_message(m):
     # Find the first match
     matches = time_regex.findall(m.content)
     if matches:
-        emb = discord.Embed(color=discord.Color.dark_embed())
-        emb.description = ''
+        # used to deal with complex chaining of sentences such as "12pm my time or 3pm for @person or 5pm for @anotherperson"
+        embeds = [discord.Embed(color=discord.Color.dark_embed(), description=''),
+                  discord.Embed(color=discord.Color.dark_embed(), description=''),
+                  discord.Embed(color=discord.Color.dark_embed(), description='')]
+        embed_order = []  # no members in order yet
         for match in matches[:3]:
-            dt_obj = parse_matchgroup_to_tz(m, match, emb)
-            if dt_obj is None:
-                continue
-            if type(dt_obj) is list:  # contains am and pm version
-                dt_obj1, dt_obj2 = dt_obj
-                emb.description += f'- {parse_matchgroup_to_time(match, is_am_pm="am")} -> ' \
-                                   f'{discord.utils.format_dt(dt_obj1, "F")} ({discord.utils.format_dt(dt_obj1, "R")}) your time\n' \
-                                   f'- {parse_matchgroup_to_time(match, is_am_pm="pm")} -> ' \
-                                   f'{discord.utils.format_dt(dt_obj2, "F")} ({discord.utils.format_dt(dt_obj2, "R")}) your time\n'
-            else:
-                formatted_time = parse_matchgroup_to_time(match)
-                emb.description += f'- {formatted_time} -> {discord.utils.format_dt(dt_obj, "F")} ' \
-                                   f'({discord.utils.format_dt(dt_obj, "R")}) your time\n'
-        if emb.description:
-            await m.channel.send(embed=emb)
+            await parse_matchgroup_to_tz(await bot.get_context(m), m, match, embeds, embed_order)
+        resultant_embs = [emb for emb in embeds if emb.description]
+        if resultant_embs:
+            await m.channel.send(embeds=resultant_embs)
 
     await bot.process_commands(m)
 
