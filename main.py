@@ -285,7 +285,7 @@ async def boosters(ctx):
 
 # Regex for 12h format time parsing
 time_regex = re.compile(
-    r'(?:^|\s)(1[0-2]|0?[1-9])\s{0,3}(?::\s{0,3}([0-5][0-9]))?\s{0,3}(am|pm)?.?\s{0,2}(yesterday|tomorrow|day\s{0,3}after\s{0,3}tomorrow|day\s{0,3}before\s{0,3}yesterday)?\s{0,3}(?:for\s{0,3}(<@!?[0-9]+>|[0-9]+|[a-z._]+))?(?:\s|$)', re.IGNORECASE)
+    r'(?:^|\s)(1[0-2]|0?[1-9])\s{0,3}(?::\s{0,3}([0-5][0-9]))?\s{0,3}(?:(am|pm).?)?\s{0,2}(yesterday|tomorrow|day\s{0,3}after\s{0,3}tomorrow|day\s{0,3}before\s{0,3}yesterday)?\s{0,3}(?:for\s{0,3}(<@!?[0-9]+>|[0-9]+|[a-z._]+))?(?:\s|$)', re.IGNORECASE)
 
 
 async def parse_matchgroup_to_tz(context, message, match_group, embeds, embed_order):
