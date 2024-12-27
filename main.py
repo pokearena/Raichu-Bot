@@ -285,12 +285,21 @@ async def boosters(ctx):
 
 # Regex for 12h format time parsing
 time_regex = re.compile(
-    r'(?:^|\s)(1[0-2]|0?[1-9])\s{0,3}(?::\s{0,3}([0-5][0-9]))?\s{0,3}(?:(am|pm).?)?\s{0,2}(yesterday|tomorrow|day\s{0,3}after\s{0,3}tomorrow|day\s{0,3}before\s{0,3}yesterday)?\s{0,3}(?:for\s{0,3}(<@!?[0-9]+>|[0-9]+|[a-z._]+))?(?:\s|$)', re.IGNORECASE)
+    r'(?:^|\s)'
+    r'(at|by|till|before|after)?'
+    r'\s{0,3}(1[0-2]|0?[1-9])'
+    r'\s{0,3}(?::\s{0,3}([0-5][0-9]))?'
+    r'\s{0,3}(?:(am|pm).?)?'
+    r'\s{0,2}(yesterday|tomorrow|day\s{0,3}after\s{0,3}tomorrow|day\s{0,3}before\s{0,3}yesterday)?'
+    r'\s{0,3}(?:for\s{0,3}(<@!?[0-9]+>|[0-9]+|[a-z._]+))?'
+    r'(?:\s|\?|\.|$)',
+    re.IGNORECASE
+)
 
 
 async def parse_matchgroup_to_tz(context, message, match_group, embeds, embed_order):
     # Extract components
-    hour, minute, am_pm, day_ref, user_mentioned = match_group
+    _, hour, minute, am_pm, day_ref, user_mentioned = match_group
 
     tz = None
     if user_mentioned:  # for user
@@ -365,7 +374,8 @@ async def on_message(m):
 
     # Find the first match
     matches = time_regex.findall(m.content)
-    if matches:
+    # prevent no match and lone hour matches
+    if matches and (matches[0] or any(matches[1:])):
         # used to deal with complex chaining of sentences such as "12pm my time or 3pm for @person or 5pm for @anotherperson"
         embeds = [discord.Embed(color=discord.Color.dark_embed(), description=''),
                   discord.Embed(color=discord.Color.dark_embed(), description=''),
