@@ -375,7 +375,8 @@ async def on_message(m):
     # Find the first match
     matches = time_regex.findall(m.content)
     # prevent no match and lone hour matches
-    if matches and (matches[0] or any(matches[1:])):
+    matches = [match for match in matches if match[0] or any(match[2:-1])]
+    if matches:
         # used to deal with complex chaining of sentences such as "12pm my time or 3pm for @person or 5pm for @anotherperson"
         embeds = [discord.Embed(color=discord.Color.dark_embed(), description=''),
                   discord.Embed(color=discord.Color.dark_embed(), description=''),
