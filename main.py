@@ -387,8 +387,12 @@ async def on_message(m):
         emb.set_author(name=m.author.display_name, icon_url=m.author.display_avatar)
         if m.content.endswith(".gif"):
             emb.set_image(url=m.content)
-            await m.delete()
-            return await m.channel.send(embed=emb)
+            try:
+                await m.delete()
+                await m.channel.send(embed=emb)
+                return
+            except:
+                pass
         # extract the gif out of this tenor link
         link = None
         async with bot.session.get(m.content) as response:
@@ -399,8 +403,12 @@ async def on_message(m):
                     link = match.group(0)
         if link:
             emb.set_image(url=link)
-            await m.delete()
-            return await m.channel.send(embed=emb)
+            try:
+                await m.delete()
+                await m.channel.send(embed=emb)
+                return
+            except:
+                pass
 
     # Find the first match
     matches = time_regex.findall(m.content)
