@@ -5,12 +5,17 @@ import re
 import time
 import zoneinfo
 from datetime import datetime, timedelta
+from http import HTTPStatus
 
+import aiohttp
 import discord
 from discord.ext import commands
 from discord.ui import View
 
 from dotenv import GUILD_ID, ALLY_role, TOKEN
+
+
+discord.utils.setup_logging()
 
 
 intents = discord.Intents.default()
@@ -33,6 +38,7 @@ clan_channels = {INFINITY_role: 1123818520002711622, IMMORTAL_role: 112381508735
 clan_emotes = {INFINITY_role: "<a:infinity:1118053955314921472>",  IMMORTAL_role: "<a:immortal:1118053951791697930>", VOID_role: "<a:void:1118053970913538068>"}
 clan_welcome_texts = ["Hey hey {mention}!! ⚡", "🤺 Engarde!! {mention}", "⚔️{mention} barged in.."]
 
+bot.IMAGE_PERMS_role = 1203780026957434970
 
 # Sorted list of timezones
 timezones = [tz[0] for tz in sorted([(tz, datetime.now(zoneinfo.ZoneInfo(tz)).utcoffset()) for tz in zoneinfo.available_timezones()], key=lambda x: x[1])]
@@ -97,7 +103,10 @@ class AllTimezonePaginator(View):
 
 @bot.event
 async def on_ready():
+    global IMAGE_PERMS_role
     print("Raichu Bot is online!")
+    if not isinstance(bot.IMAGE_PERMS_role, discord.Role):  # as on ready can be called more than once
+        bot.IMAGE_PERMS_role = bot.get_guild(GUILD_ID).get_role(bot.IMAGE_PERMS_role)
 
 
 # Clan Welcome Feature
@@ -372,6 +381,27 @@ async def on_message(m):
     if m.author.bot:
         return
 
+    # check tenor links
+    if bot.IMAGE_PERMS_role in m.author.roles and m.content.startswith(("https://tenor.com/view/", "https://media1.tenor.com/", "https://media.tenor.com/")):
+        emb = discord.Embed()
+        emb.set_author(name=m.author.display_name, icon_url=m.author.display_avatar)
+        if m.content.endswith(".gif"):
+            emb.set_image(url=m.content)
+            await m.delete()
+            return await m.channel.send(embed=emb)
+        # extract the gif out of this tenor link
+        link = None
+        async with bot.session.get(m.content) as response:
+            if response.status == HTTPStatus.OK:
+                text = await response.text()
+                match = re.search(r'https:\/\/media1?\.tenor\.com\/[^"]+.gif', text)
+                if match:
+                    link = match.group(0)
+        if link:
+            emb.set_image(url=link)
+            await m.delete()
+            return await m.channel.send(embed=emb)
+
     # Find the first match
     matches = time_regex.findall(m.content)
     # prevent no match and lone hour matches
@@ -529,4 +559,10 @@ async def on_presence_update(before_m, after_m):
                     await greenlist_vanity_emb(after_m)
             return
 
-bot.run(TOKEN)
+
+async def main():
+    async with bot:
+        bot.session = aiohttp.ClientSession()
+        await bot.start(TOKEN)
+
+asyncio.run(main())
